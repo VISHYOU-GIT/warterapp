@@ -114,6 +114,15 @@
         attribution: 'Map tiles by Stamen Design'
       });
 
+      // New compatible layers
+      const watercolorLayer = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
+        attribution: 'Map tiles by Stamen Design, CC BY 3.0 – Map data © OpenStreetMap'
+      });
+
+      const terrainLayer = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg', {
+        attribution: 'Map tiles by Stamen Design, CC BY 3.0 – Map data © OpenStreetMap'
+      });
+
       const map = L.map('map', {
         center: [20.5937, 78.9629], // Center coordinates for India
         zoom: 5, // Adjust zoom to cover India
@@ -123,7 +132,9 @@
       // Define base layers and overlay layers
       const baseLayers = {
         "OpenStreetMap": osmLayer,
-        "Toner": tonerLayer
+        "Toner": tonerLayer,
+        "Watercolor": watercolorLayer,
+        "Terrain": terrainLayer
       };
 
       let markerLayer = L.layerGroup().addTo(map);
