@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- ...existing code... -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Water App</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- ...existing code... -->
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+      <div class="container-fluid">
+        <button class="navbar-toggler border-0 shadow-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="order-0 mx-auto">
+          <a class="navbar-brand fw-bold" href="#">Water App</a>
+        </div>
+        <div class="d-flex">
+          <a href="#" class="nav-link"><i class="far fa-user-circle fs-1"></i></a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Search Bar -->
+    <div class="container my-3 position-relative">
+      <input type="text" id="markerSearch" class="form-control" placeholder="Search markers by name">
+      <!-- Suggestions list -->
+      <ul id="suggestionsContainer" class="list-group position-absolute w-100" style="z-index: 1000;"></ul>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map" style="height:100dvh;"></div>
+
+    <!-- Feedback Modal -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="feedbackModalLabel">Feedback Form</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="feedbackForm">
+              <div class="mb-3">
+                <label for="feedbackTitle" class="form-label">Title</label>
+                <input type="text" class="form-control" id="feedbackTitle">
+              </div>
+              <div class="mb-3">
+                <label for="feedbackSubject" class="form-label">Subject</label>
+                <input type="text" class="form-control" id="feedbackSubject">
+              </div>
+              <div class="mb-3">
+                <label for="feedbackDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="feedbackDescription" rows="3"></textarea>
+              </div>
+              <div class="mb-3">
+                <label for="feedbackUpload" class="form-label">Upload Item</label>
+                <input class="form-control" type="file" id="feedbackUpload">
+              </div>
+              <button type="submit" class="btn btn-primary">Submit Feedback</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="feedbackToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            Submitted successfully!
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ...existing code... -->
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Map and Marker Script -->
+    <script>
+      // Updated marker data for Indian rivers
+      const markersData = [
+        { name: 'Ganga', desc: 'The sacred river flowing through northern India.', lat: 25.5941, lng: 85.1376, img: 'https://cdn.pixabay.com/photo/2023/11/21/15/39/ai-generated-8403627_640.png' },
+        { name: 'Yamuna', desc: 'A major tributary of the Ganga, flowing through Delhi.', lat: 28.5355, lng: 77.3910, img: 'https://cdn.pixabay.com/photo/2023/01/19/10/42/river-7728801_640.jpg' },
+        { name: 'Godavari', desc: 'The longest river in peninsular India.', lat: 19.0000, lng: 79.6000, img: 'https://cdn.pixabay.com/photo/2023/09/25/10/46/water-8274680_1280.jpg' },
+        { name: 'Narmada', desc: 'A significant west-flowing river.', lat: 22.0000, lng: 75.0000, img: 'https://cdn.pixabay.com/photo/2022/03/04/15/14/river-7047522_640.jpg' },
+        { name: 'Krishna', desc: 'A major river in southern India.', lat: 16.0000, lng: 74.0000, img: 'https://cdn.pixabay.com/photo/2015/10/05/14/42/river-972708_640.jpg' },
+        { name: 'Cauvery', desc: 'Famous for its fertile delta in Tamil Nadu and Karnataka.', lat: 11.0000, lng: 78.0000, img: 'https://cdn.pixabay.com/photo/2016/11/29/01/35/river-1866579_640.jpg' },
+        { name: 'Mahanadi', desc: 'Flows through the eastern state of Odisha.', lat: 21.0000, lng: 83.0000, img: 'https://cdn.pixabay.com/photo/2024/01/18/19/23/mountain-8517546_640.jpg' },
+        { name: 'Tapti', desc: 'Passes through central India into the Arabian Sea.', lat: 21.4000, lng: 73.0000, img: 'https://cdn.pixabay.com/photo/2021/05/23/21/57/mountains-6277391_640.jpg' },
+        { name: 'Brahmaputra', desc: 'A mighty river flowing through the northeast.', lat: 26.0000, lng: 91.0000, img: 'https://cdn.pixabay.com/photo/2019/08/31/07/29/fishermen-4442944_640.jpg' },
+        { name: 'Sutlej', desc: 'Flows through northern India and into Pakistan.', lat: 32.0000, lng: 74.0000, img: 'https://cdn.pixabay.com/photo/2016/11/22/21/43/cliffs-1850715_640.jpg' }
+      ];
+
+      // Initialize map with base layers and centered on India
+      const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      });
+
+      const tonerLayer = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png', {
+        attribution: 'Map tiles by Stamen Design'
+      });
+
+      const map = L.map('map', {
+        center: [20.5937, 78.9629], // Center coordinates for India
+        zoom: 5, // Adjust zoom to cover India
+        layers: [osmLayer]
+      });
+
+      // Define base layers and overlay layers
+      const baseLayers = {
+        "OpenStreetMap": osmLayer,
+        "Toner": tonerLayer
+      };
+
+      let markerLayer = L.layerGroup().addTo(map);
+      const overlays = {
+        "Markers": markerLayer
+      };
+
+      L.control.layers(baseLayers, overlays).addTo(map);
+
+      const renderMarkers = (filter = '') => {
+        markerLayer.clearLayers();
+        markersData.filter(m => m.name.toLowerCase().includes(filter.toLowerCase()))
+          .forEach(m => {
+            const marker = L.marker([m.lat, m.lng]).addTo(markerLayer);
+            const popupContent = `
+              <div>
+                <img src="${m.img}" alt="${m.name}" style="width:100%;">
+                <h6 class="mt-2 fw-bold mb-0">${m.name}</h6>
+                <p>${m.desc}</p>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                  <i class="fas fa-comment"></i> Feedback
+                </button>
+              </div>
+            `;
+            marker.bindPopup(popupContent);
+          });
+      };
+
+      renderMarkers();
+
+      // Search with suggestions
+      const searchInput = document.getElementById('markerSearch'),
+            suggestionsContainer = document.getElementById('suggestionsContainer');
+
+      searchInput.addEventListener('input', (e) => {
+        const value = e.target.value.trim();
+        suggestionsContainer.innerHTML = '';
+        const filteredMarkers = markersData.filter(m => m.name.toLowerCase().includes(value.toLowerCase()));
+        
+        filteredMarkers.forEach(m => {
+          const li = document.createElement('li');
+          li.className = 'list-group-item list-group-item-action';
+          li.textContent = m.name;
+          li.style.cursor = 'pointer';
+          li.addEventListener('click', () => {
+            map.setView([m.lat, m.lng], 15);
+            markerLayer.eachLayer(layer => {
+              if(layer.getLatLng().lat === m.lat && layer.getLatLng().lng === m.lng){
+                layer.openPopup();
+              }
+            });
+            suggestionsContainer.innerHTML = '';
+            searchInput.value = m.name;
+          });
+          suggestionsContainer.appendChild(li);
+        });
+        
+        renderMarkers(value);
+      });
+
+      // Hide suggestions on clicking outside the search input and suggestions container
+      document.addEventListener('click', (event) => {
+        if (!searchInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+          suggestionsContainer.innerHTML = '';
+        }
+      });
+      
+      // Toast on feedback form submission
+      const feedbackForm = document.getElementById('feedbackForm');
+      feedbackForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // Hide feedback modal
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).hide();
+        // Show toast notification for 2 seconds
+        const toastEl = document.getElementById('feedbackToast');
+        const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 2000 });
+        toast.show();
+        // Optionally, reset the form
+        feedbackForm.reset();
+      });
+    </script>
+  </body>
+</html>
